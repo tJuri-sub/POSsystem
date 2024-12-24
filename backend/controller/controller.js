@@ -1,4 +1,8 @@
 const Product = require('../model/products');
+const User = require('../model/user');
+
+const {hashPassword, comparePassword} = require('../helper/auth');
+const jwt = require('jsonwebtoken');
 
 //============================================================
 //      CRUD Functions
@@ -35,7 +39,7 @@ const addProducts = async (req, res) => {
         console.log(error);
         res.status(500).json({ error: "Server error" }); 
     }
-}
+};
 
 //GET Products
 const getProducts = async (req, res) => {
@@ -98,15 +102,91 @@ const deleteProducts = async (req, res) => {
         console.error(error); 
         res.status(500).json({ error: "Server error" });
     }
-}
+};
 
 //============================================================
 //      AUTHENTICATION & AUTHORIZATION
 //============================================================
 
+//Sign up (Registration)
+const registration = async (req, res) => {
+    try{
+        const { firstname, lastname, username, password } = req.body;
+
+
+        if(!firstname || !lastname || !username || !password ) {
+            return res.json({
+                error: "Fields empty"
+            })
+        }
+
+        const exist = await     User.findOne({username});
+
+        if(exist) {
+            return res.json({error: "Username is already taken."})
+        }
+
+        const hashedPassword = await hashPassword(password);
+
+        const userCreate = await User.create({
+            firstname,
+            lastname, 
+            username, 
+            password: hashedPassword 
+        });
+
+        return res.json({message: "Account created.", userCreate})
+    }catch(error){
+        console.error(error); 
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+//Sign in (Login)
+const loginUser = async (req, res) => {
+    try{
+
+        const { username, password } = req.body;
+
+        const user = await User.findOne({username});
+        if(!user){
+            return res.json({
+                error: "user not found. "
+            })
+        }
+
+        const matchPass = await comparePassword(password, user.password);
+
+        if(matchPass) {
+            jwt.sign({id: user._id, username: user.username }, process.env.JWT_SECRET, {}, (err, token) => { 
+                if(err) throw err;
+                res.cookie("token", token).json(user);
+            })
+        }
+        if (!matchPass) {
+            res.json({
+              error: "password do not match",
+            });
+          }
+    }catch(error){
+        console.error(error); 
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+//Log out
+const logoutUser = (req, res) => {
+    res.clearCookie("token");
+    res.json({ message: "Logged out successfully. "});
+};
+
+
 module.exports = {
     addProducts,
     getProducts,
     putProducts,
-    deleteProducts
+    deleteProducts,
+    registration,
+    loginUser,
+    logoutUser
 };
