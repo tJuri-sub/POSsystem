@@ -113,15 +113,13 @@ const registration = async (req, res) => {
     try{
         const { firstname, lastname, username, password } = req.body;
 
-
         if(!firstname || !lastname || !username || !password ) {
             return res.json({
                 error: "Fields empty"
             })
         }
 
-        const exist = await     User.findOne({username});
-
+        const exist = await User.findOne({username});
         if(exist) {
             return res.json({error: "Username is already taken."})
         }
@@ -135,7 +133,7 @@ const registration = async (req, res) => {
             password: hashedPassword 
         });
 
-        return res.json({message: "Account created.", userCreate})
+        return res.status(201).json({message: "Account created.", userCreate})
     }catch(error){
         console.error(error); 
         res.status(500).json({ error: "Server error" });
@@ -147,6 +145,12 @@ const loginUser = async (req, res) => {
     try{
 
         const { username, password } = req.body;
+
+        if(!username || !password){
+            return res.json({
+                error: "username and password  are required"
+            })
+        }
 
         const user = await User.findOne({username});
         if(!user){
@@ -176,17 +180,52 @@ const loginUser = async (req, res) => {
 
 //Log out
 const logoutUser = (req, res) => {
+    const token = req.cookies?.token;
+
+    if (!token) {
+        return res.status(400).json({ error: "You're already logged out." });
+    }
+
+    // Clear the token cookie
     res.clearCookie("token");
-    res.json({ message: "Logged out successfully. "});
+    res.status(200).json({ message: "Logged out successfully." });
 };
 
+const getProfile = (req, res) => {
+    const { token } = req.cookies;
+
+    if (!token) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+    jwt.verify(token, process.env.JWT_SECRET, {}, (err, user) => {
+        if (err) return res.status(403).json({ error: "Invalid token" });
+
+        User.findById(user.id)
+          .select("firstname lastname username") 
+          .then((userData) => {
+            if (!userData) {
+              return res.status(404).json({ error: "User not found" });
+            }
+            res.json(userData); 
+          })
+          .catch((err) => {
+            console.error(err);
+            res.status(500).json({ error: "Server error" });
+          });
+      });
+
+}
 
 module.exports = {
+    //CRUD
     addProducts,
     getProducts,
     putProducts,
     deleteProducts,
+    //Authentication
     registration,
     loginUser,
-    logoutUser
+    logoutUser,
+    getProfile
 };

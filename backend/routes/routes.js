@@ -7,18 +7,21 @@ const {
     deleteProducts, 
     registration,
     loginUser,
-    logoutUser
+    logoutUser,
+    getProfile
 } = require('../controller/controller');
+const { authorize } = require('../middleware/authorization');
 
 //CRUD
-router.post("/addProducts", addProducts);
-router.get("/getProducts", getProducts);
-router.put("/putProducts/:id", putProducts);
-router.delete("/deleteProducts/:id", deleteProducts);
+router.post("/addProducts", authorize, addProducts);
+router.get("/getProducts", authorize,  getProducts);
+router.put("/putProducts/:id", authorize,  putProducts);
+router.delete("/deleteProducts/:id", authorize,  deleteProducts);
 
 //AUTH
 router.post("/register", registration);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);
+router.get("/profile", authorize,  getProfile);
 
 module.exports = router;

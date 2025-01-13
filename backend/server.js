@@ -7,7 +7,7 @@ const app = express();
 
 mongoose
     .connect(process.env.MONGO_URI)
-    .then(() => console.log("Databse connected."))
+    .then(() => console.log("Database connected."))
     .catch((err) => console.log("Database not connected.", err ));
 
 app.use(express.json());
