@@ -142,80 +142,99 @@ const registration = async (req, res) => {
 
 //Sign in (Login)
 const loginUser = async (req, res) => {
-    try{
-
+    try {
         const { username, password } = req.body;
 
-        if(!username || !password){
-            return res.json({
-                error: "username and password  are required"
-            })
+        // Validate input
+        if (!username || !password) {
+            return res.status(400).json({ error: "Username and password are required" });
         }
 
-        const user = await User.findOne({username});
-        if(!user){
-            return res.json({
-                error: "user not found. "
-            })
+        // Check if user exists
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
         }
 
+        // Compare password
         const matchPass = await comparePassword(password, user.password);
-
-        if(matchPass) {
-            jwt.sign({id: user._id, username: user.username }, process.env.JWT_SECRET, {}, (err, token) => { 
-                if(err) throw err;
-                res.cookie("token", token).json(user);
-            })
-        }
         if (!matchPass) {
-            res.json({
-              error: "password do not match",
-            });
-          }
-    }catch(error){
-        console.error(error); 
+            return res.status(401).json({ error: "Password does not match" });
+        }
+
+        // Generate JWT
+        jwt.sign(
+            { userId: user._id, username: user.username },
+            process.env.JWT_SECRET,
+            {},
+            (err, token) => {
+                if (err) {
+                    console.error("JWT signing error:", err);
+                    throw err;
+                }
+
+                // Set token in cookies
+                res.cookie("jwt", token, {
+                    httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
+                    secure: process.env.NODE_ENV === "production", // Secure in production
+                }).json({ message: "Login successful", user });
+            }
+        );
+    } catch (error) {
+        console.error("Login error:", error);
         res.status(500).json({ error: "Server error" });
     }
 };
 
+
 //Log out
 const logoutUser = (req, res) => {
-    const token = req.cookies?.token;
+    const token = req.cookies?.jwt; // Check if the token exists in the cookies
 
     if (!token) {
+        // User is already logged out
         return res.status(400).json({ error: "You're already logged out." });
     }
 
     // Clear the token cookie
-    res.clearCookie("token");
+    res.clearCookie("jwt", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // Use secure cookie in production
+    });
+
     res.status(200).json({ message: "Logged out successfully." });
 };
 
-const getProfile = (req, res) => {
-    const { token } = req.cookies;
 
-    if (!token) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
+//Profile
+const getProfile = async (req, res) => {
+    try {
+        const token = req.cookies?.jwt; // Use consistent cookie name
 
-    jwt.verify(token, process.env.JWT_SECRET, {}, (err, user) => {
-        if (err) return res.status(403).json({ error: "Invalid token" });
+        if (!token) {
+            return res.status(401).json({ error: "Unauthorized. No token provided." });
+        }
 
-        User.findById(user.id)
-          .select("firstname lastname username") 
-          .then((userData) => {
-            if (!userData) {
-              return res.status(404).json({ error: "User not found" });
+        // Verify JWT
+        jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+            if (err) {
+                return res.status(403).json({ error: "Invalid or expired token." });
             }
-            res.json(userData); 
-          })
-          .catch((err) => {
-            console.error(err);
-            res.status(500).json({ error: "Server error" });
-          });
-      });
 
-}
+            // Fetch user by ID from the decoded token
+            const userData = await User.findById(decoded.userId).select("firstname lastname username");
+            if (!userData) {
+                return res.status(404).json({ error: "User not found." });
+            }
+
+            res.status(200).json(userData); // Return profile data
+        });
+    } catch (error) {
+        console.error("Get profile error:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
 
 module.exports = {
     //CRUD
