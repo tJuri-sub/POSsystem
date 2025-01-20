@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import Header from "../components/header";
 
 function Production() {
   const [product, setProduct] = useState({
@@ -49,6 +50,7 @@ function Production() {
 
   return (
     <div>
+      <Header />
       <form onSubmit={addProd}>
         <input
           type="text"

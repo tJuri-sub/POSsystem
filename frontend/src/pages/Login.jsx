@@ -1,8 +1,10 @@
 import { UserIcon, PassIcon, SubmitIcon } from "../components/icons";
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
 import axios from "axios";
 
-import toast from "react-hot-toast";
+import { UserContext } from "../../context/userContext";
+
+import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
@@ -11,18 +13,28 @@ function Login() {
     password: "",
   });
 
+  const { user, setUser } = useContext(UserContext);
+
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/products");
+    }
+  }, [user, navigate]);
 
   const loginHandler = async (e) => {
     e.preventDefault();
+
     const { username, password } = data;
+
     try {
       const response = await axios.post("/login", { username, password });
 
       if (response.data.error) {
         toast.error(response.data.error);
       } else {
-        setData(response.data);
+        setUser(response.data);
         setData({
           username: "",
           password: "",
