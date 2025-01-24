@@ -52,12 +52,12 @@ function Login() {
       <div className="xs:w-[70%] lg:w-[50%] xs:h-1/2  lg:h-3/5 bg-accent rounded-md p-3 flex justify-center items-center flex-col">
         <h1 className="text-2xl">Login</h1>
 
-        <form onSubmit={loginHandler}>
-          <div className="flex flex-col items-center gap-6 mt-5">
+        <form onSubmit={loginHandler} className="">
+          <div className="flex flex-col items-center gap-6 mt-5 bg-accent">
             <div className="flex gap-2 border-[1px] p-1 border-primary rounded-md items-center justify-center">
               <UserIcon />
               <input
-                className="py-1 bg-transparent"
+                className="py-1 bg-transparent flex items-center"
                 type="text"
                 name="username"
                 id="username"
@@ -72,7 +72,7 @@ function Login() {
             >
               <PassIcon />
               <input
-                className="py-1 bg-transparent"
+                className="py-1 bg-transparent flex items-center"
                 type="password"
                 name="password"
                 id="password"

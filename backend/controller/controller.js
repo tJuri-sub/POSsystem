@@ -208,7 +208,7 @@ const logoutUser = (req, res) => {
 //Profile
 const getProfile = async (req, res) => {
   try {
-    const token = req.cookies?.jwt; // Use consistent cookie name
+    const token = req.cookies?.jwt;
 
     if (!token) {
       return res

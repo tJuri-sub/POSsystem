@@ -3,7 +3,7 @@ import { useContext, useState } from "react";
 import { ArrowIcon } from "./icons";
 
 const Header = () => {
-  const { user, logout } = useContext(UserContext);
+  const { user, loading, logout } = useContext(UserContext);
   const [dropdown, setDropdown] = useState(false);
 
   const toggleDropdown = () => {
@@ -17,10 +17,10 @@ const Header = () => {
         className="relative flex items-center justify-center gap-2 cursor-pointer"
         onClick={toggleDropdown}
       >
-        {!!user ? (
-          <>
-            <h1>{user.username}</h1>
-          </>
+        {loading ? (
+          <h1>Loading...</h1>
+        ) : !!user ? (
+          <h1>{user.username}</h1>
         ) : (
           <h1>Not logged in.</h1>
         )}
